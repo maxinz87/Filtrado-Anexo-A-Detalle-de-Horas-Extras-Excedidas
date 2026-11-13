@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anexo A: Detalle de Horas Extras Excedidas — EPE</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="brand-block">
+        <div class="brand-logo" aria-hidden="true">
+          <img src="./resources/logo-epe-azul.jpg" alt="Logo EPE Santa Fe" class="header-logo-img">
+        </div>
+        <div class="brand-titles">
+          <p class="brand-org">Empresa Provincial de la Energía de Santa Fe · Gerencia de Recursos Humanos</p>
+          <h1>Generador Anexo A: Detalle de Horas Extras Excedidas</h1>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <!-- Panel 1: Controles de Formulario Previos (Metadatos) -->
+    <section class="card" aria-labelledby="heading-metadata">
+      <div class="card-header">
+        <h2 id="heading-metadata">1. Datos de Cabecera</h2>
+        <p class="card-subtitle">Complete estos datos antes o después de procesar la planilla; se incluirán
+          automáticamente al exportar el PDF.</p>
+      </div>
+
+      <form id="metadataForm" class="metadata-form" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="selectAnio">Año de ejecución</label>
+            <select id="selectAnio" name="anio"></select>
+          </div>
+
+          <div class="form-group">
+            <label for="selectMes">Mes de ejecución</label>
+            <select id="selectMes" name="mes"></select>
+          </div>
+
+          <div class="form-group">
+            <label for="inputExpte">Cde. Expte N°</label>
+            <input type="text" id="inputExpte" name="expte" placeholder="Ej.: 15201-0001234-5" autocomplete="off"
+              autocorrect="off" autocapitalize="none" spellcheck="false" aria-describedby="expteHelp">
+            <span id="expteHelp" class="field-hint">Cadena continua sin espacios en blanco.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="inputSector">Sector</label>
+            <input type="text" id="inputSector" name="sector" placeholder="Ej.: Distribución Centro" autocomplete="off">
+          </div>
+
+          <div class="form-group form-group-wide">
+            <label for="inputJefe">Jefe a cargo del agente (Legajo/Apellido y Nombres)</label>
+            <input type="text" id="inputJefe" name="jefe" placeholder="Ej.: 12345 / PÉREZ JUAN CARLOS"
+              autocomplete="off">
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="inputObservacionesGlobal">Observaciones</label>
+            <div class="obs-bulk-row">
+              <textarea id="inputObservacionesGlobal" name="observacionesGlobal" rows="3"
+                placeholder="Ingrese el texto de observaciones que desea aplicar masivamente a todas las filas de la tabla..."></textarea>
+              <button type="button" id="btnApplyObs" class="btn btn-secondary">
+                Aplicar a la columna Observaciones
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Panel 2: Carga de Archivo y Reglas de Filtrado -->
+    <section class="card" aria-labelledby="heading-upload">
+      <div class="card-header">
+        <h2 id="heading-upload">2. Carga de Planilla (.xlsx / .ods) y Filtrado</h2>
+        <p class="card-subtitle">
+          Se respetan los <strong>filtros aplicados en el archivo (AutoFiltro de Excel / Calc)</strong> para considerar
+          únicamente las filas seleccionadas y, sobre ellas, se aplican las <strong>condiciones de horas extras (Res.
+            077/2020)</strong>:
+          <strong>Total Horas Programadas &gt; 80</strong>,
+          <strong>Total Horas Emergencia &gt; 0</strong> o
+          <strong>TOTAL HS PROGRAMADAS + EMERGENCIA &gt; 120</strong>.
+        </p>
+      </div>
+
+      <div class="upload-controls">
+        <div class="form-group file-input-group">
+          <label for="inputFile">Seleccionar archivo de horas (.xlsx o .ods)</label>
+          <div class="file-row">
+            <input type="file" id="inputFile" name="spreadsheet" accept=".xlsx,.ods" class="file-input-hidden">
+            <label for="inputFile" class="btn btn-file-custom" id="btnSelectFileLabel">
+              Seleccionar archivo
+            </label>
+            <span id="fileNameDisplay" class="file-name-badge">Ningún archivo seleccionado</span>
+          </div>
+        </div>
+
+        <div class="form-group respect-filter-group">
+          <label class="check-toggle-label-panel" for="chkRespectSheetFilter"
+            title="Si está activo, descarta las filas ocultadas por el filtro en Excel o Calc">
+            <input type="checkbox" id="chkRespectSheetFilter" name="respectSheetFilter" checked>
+            <span>Respetar filtros del archivo</span>
+          </label>
+          <span class="field-hint">Solo evalúa las filas seleccionadas por el filtro de la planilla.</span>
+        </div>
+
+        <div class="upload-actions">
+          <button type="button" id="btnProcessFile" class="btn btn-primary" disabled>Procesar archivo</button>
+        </div>
+      </div>
+
+      <div class="sheet-filter-info-bar" id="sheetFilterInfoBar" style="display: none;">
+        <span class="sheet-filter-tag" id="sheetFilterTag">Filtro en archivo detectado</span>
+        <span id="sheetFilterDetails">0 filas visibles seleccionadas por el filtro / 0 filas ocultas ignoradas</span>
+      </div>
+
+      <div id="statusBanner" class="status-banner is-info" role="status" aria-live="polite">
+        Seleccione un archivo <code>.xlsx</code> o <code>.ods</code> para analizar las filas y generar el formulario
+        Anexo A.
+      </div>
+    </section>
+
+    <!-- Panel 3: Tabla Interactiva Editable y Exportación PDF -->
+    <section class="card" aria-labelledby="heading-table">
+      <div class="table-toolbar">
+        <div>
+          <h2 id="heading-table">3. Detalle de Registros Filtrados</h2>
+          <div class="metrics-row">
+            <span class="metric-pill">Total filas leídas: <strong id="metricTotalRows">0</strong></span>
+            <span class="metric-pill" id="pillVisibleRows">Visibles por filtro: <strong
+                id="metricVisibleRows">0</strong></span>
+            <span class="metric-pill metric-pill-accent">Cumplen condiciones (en tabla): <strong
+                id="metricFilteredRows">0</strong></span>
+          </div>
+        </div>
+
+        <div class="export-actions">
+          <button type="button" id="btnExportPdf" class="btn btn-export" disabled>
+            Generar PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table id="dataTable" class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Legajo</th>
+              <th scope="col">Apellido Nombre</th>
+              <th scope="col" class="col-num">Total Horas Programadas</th>
+              <th scope="col" class="col-num col-calc">Cant. hs. extras excedidas Art. 8</th>
+              <th scope="col" class="col-num">Total Horas Emergencia</th>
+              <th scope="col" class="col-num">TOTAL HS PROGRAMADAS + EMERGENCIA</th>
+              <th scope="col" class="col-num col-calc">Cant. hs. que exceden 120hs</th>
+              <th scope="col" class="col-check">
+                <div class="th-check-content">
+                  <span>Incumple Art. 4° Res. 077/2020</span>
+                  <label class="th-master-toggle" title="Marcar o desmarcar todas las filas en Art. 4°">
+                    <input type="checkbox" class="th-master-check" data-column="incumpleArt4" disabled>
+                    <span class="th-master-badge">Todos</span>
+                  </label>
+                </div>
+              </th>
+              <th scope="col" class="col-check">
+                <div class="th-check-content">
+                  <span>Incumple Art. 7° Res. 077/2020</span>
+                  <label class="th-master-toggle" title="Marcar o desmarcar todas las filas en Art. 7°">
+                    <input type="checkbox" class="th-master-check" data-column="incumpleArt7" disabled>
+                    <span class="th-master-badge">Todos</span>
+                  </label>
+                </div>
+              </th>
+              <th scope="col" class="col-obs">Observaciones</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr class="empty-row">
+              <td colspan="10">
+                No hay registros cargados aún. Seleccione un archivo <code>.xlsx</code> o <code>.ods</code> para
+                visualizar y editar los datos.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div class="container footer-inner">
+      <span>Creado por <a id="contacto" href="mailto:mzapata@epe.santa.gov.ar">M. Zapata - Leg. 72853</a></span>
+    </div>
+  </footer>
+
+  <!-- Librerías locales Offline -->
+  <script src="./libs/xlsx.full.min.js"></script>
+  <script src="./libs/jspdf.umd.min.js"></script>
+  <script src="./libs/jspdf.plugin.autotable.min.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+
+</html>
